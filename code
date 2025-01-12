@@ -1,0 +1,77 @@
+from typing import Tuple
+import customtkinter as ctk
+import speech_recognition as sr
+from googletrans import Translator, LANGUAGES
+
+# Translation
+class translatorApp:
+    def __init__(self):
+        self.language_mapping = {lang_name.capitalize(): lang_code for lang_code, lang_name in LANGUAGES.items()}
+
+    def speech_to_text(self):
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            print("You can speak now...")
+            audio = recognizer.listen(source)
+
+        try:
+            text = recognizer.recognize_google(audio)
+            print(f"Original Text: {text}")
+            return text
+        except sr.UnknownValueError:
+            print("Could not understand the audio.")
+        except sr.RequestError as e:
+            print(f"Could not request results from the recognition service; {e}")
+        return None
+    
+    def translate_text(self, text, target_language):
+        translator = Translator()
+        try:
+            translated = translator.translate(text, dest=target_language)
+            return translated.text
+        except Exception as e:
+            print(f"Translation failed: {e}")
+            return "Translation error, please try again later."
+    
+    def list_languages(self):
+        return list(self.language_mapping.keys())
+
+# App
+class TranslatorAppGUI(ctk.CTk):
+    def __init__(self, translator_app):
+        super().__init__()
+        self.translator_app = translator_app
+
+        self.title("Translate Go")
+        self.geometry("700x500")
+
+        self.create_widgets()
+    
+    def create_widgets(self):
+        self.label_instruction = ctk.CTkLabel(self, text="Choose input method and language for translation", font=("Vogue Regular", 25))
+        self.label_instruction.pack(pady=20)
+
+        self.input_choice_var = ctk.StringVar(value="text")
+        self.radio_voice = ctk.CTkRadioButton(self, text="Voice Input", variable=self.input_choice_var, value="voice", font=("Rockwell Regular", 18))
+        self.radio_voice.pack(pady=10)
+
+        self.radio_text = ctk.CTkRadioButton(self, text="Text Input", variable=self.input_choice_var, value="text", font=("Rockwell Regular", 18))
+        self.radio_text.pack(pady=10)
+
+        self.voice_button = ctk.CTkButton(self, text="Start Voice Input", command=self.handle_voice_input, font=("Rockwell Regular", 16))
+        self.voice_button.pack(pady=10)
+
+        self.text_box = ctk.CTkTextbox(self, width=300, height=80, font=("Rockwell Regular", 20))
+        self.text_box.pack(pady=10)
+
+        self.translate_button = ctk.CTkButton(self, text="Translate", font=("Rockwell Regular", 16), command=self.handle_translation)
+        self.translate_button.pack(pady=10)
+
+        self.translated_label = ctk.CTkLabel(self, text="", font=("Rockwell Regular", 20), wraplength=400)
+        self.translated_label.pack(pady=10)
+
+        # Scrollbar
+        self.language_frame = ctk.CTkFrame(self)
+        self.language_frame.pack(pady=10)
+
+        self.language_canvas = ctk.CTkCanvas(self.language_frame)
